@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sci_bingo
+      POSTGRES_PASSWORD: sci_bingo
+      POSTGRES_DB: sci_bingo
+    ports:
+      - "5432:5432"
+    volumes:
+      - sci_bingo_db_data:/var/lib/postgresql/data
+
+volumes:
+  sci_bingo_db_data:

@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PLAYER
+  ADMIN
+}
+
+enum RunStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(PLAYER)
+  createdAt    DateTime @default(now())
+
+  cards    BingoCard[]
+  payments Payment[]
+}
+
+model Song {
+  id        Int     @id @default(autoincrement())
+  sourceId  Int?    @unique
+  name      String
+  isCover   Boolean @default(false)
+  playCount Int     @default(0)
+
+  squares CardSquare[]
+  played  PlayedSong[]
+
+  @@index([name])
+}
+
+/// A run is one bingo game spanning a handful of shows (e.g. a 3-night run).
+/// Cards, payments, and the eventual winner all belong to the run as a whole;
+/// individual songs are logged against whichever Show they were played at.
+model Run {
+  id          String    @id @default(cuid())
+  name        String
+  status      RunStatus @default(DRAFT)
+  entryFee    Decimal   @default(10.00) @db.Decimal(10, 2)
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  shows    Show[]
+  cards    BingoCard[] @relation("RunCards")
+  payments Payment[]
+
+  winnerCardId String?    @unique
+  winnerCard   BingoCard? @relation("RunWinner", fields: [winnerCardId], references: [id])
+}
+
+model Show {
+  id        String   @id @default(cuid())
+  runId     String
+  name      String?
+  venue     String?
+  showDate  DateTime
+  createdAt DateTime @default(now())
+
+  run         Run          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  playedSongs PlayedSong[]
+}
+
+model BingoCard {
+  id         String   @id @default(cuid())
+  runId      String
+  userId     String
+  playerName String
+  createdAt  DateTime @default(now())
+
+  run     Run          @relation("RunCards", fields: [runId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  squares CardSquare[]
+  wonRun  Run?         @relation("RunWinner")
+
+  @@unique([runId, userId])
+}
+
+model CardSquare {
+  id       String @id @default(cuid())
+  cardId   String
+  position Int
+  songId   Int?
+
+  card BingoCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  song Song?     @relation(fields: [songId], references: [id])
+
+  @@unique([cardId, position])
+}
+
+model PlayedSong {
+  id       String   @id @default(cuid())
+  showId   String
+  songId   Int
+  playedAt DateTime @default(now())
+
+  show Show @relation(fields: [showId], references: [id], onDelete: Cascade)
+  song Song @relation(fields: [songId], references: [id])
+
+  @@unique([showId, songId])
+}
+
+model Payment {
+  id        String    @id @default(cuid())
+  runId     String
+  userId    String
+  amountDue Decimal   @default(10.00) @db.Decimal(10, 2)
+  paid      Boolean   @default(false)
+  paidAt    DateTime?
+  note      String?
+
+  run  Run  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, userId])
+}
