@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import SongTypeahead, { type SongOption } from "@/components/SongTypeahead";
+import VenmoPaymentPrompt from "@/components/VenmoPaymentPrompt";
 import { PICK3_COUNT, computePick3Win, getHitSongIds } from "@/lib/pick3";
 
 type EntryResponse = {
@@ -16,9 +17,11 @@ type EntryResponse = {
     name: string;
     status: string;
     entryFee: string | number;
+    venmoHandle: string | null;
     winnerEntryId: string | null;
   } | null;
   shows: { id: string; name: string | null; venue: string | null; showDate: string }[];
+  payment: { paid: boolean; amountDue: number } | null;
 };
 
 export default function Pick3EntryClient({
@@ -178,6 +181,20 @@ export default function Pick3EntryClient({
             );
           })}
         </div>
+
+        {data.game.venmoHandle && data.payment && (
+          <div className="mt-6">
+            {data.payment.paid ? (
+              <p className="text-center text-sm text-cheese-teal">✓ You&apos;re paid up for this game.</p>
+            ) : (
+              <VenmoPaymentPrompt
+                venmoHandle={data.game.venmoHandle}
+                amount={data.payment.amountDue}
+                note={data.game.name}
+              />
+            )}
+          </div>
+        )}
       </div>
     );
   }

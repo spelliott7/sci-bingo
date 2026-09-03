@@ -7,6 +7,7 @@ import GameStatusControls from "@/components/GameStatusControls";
 import CompleteGamePanel from "@/components/CompleteGamePanel";
 import ShowManager from "@/components/ShowManager";
 import PlayersPaymentsPanel from "@/components/PlayersPaymentsPanel";
+import VenmoHandleEditor from "@/components/VenmoHandleEditor";
 
 const TYPE_LABEL: Record<string, string> = { BINGO: "Bingo", PICK3: "Pick 3" };
 
@@ -42,6 +43,9 @@ export default async function AdminGamePage({
               </span>
             </div>
             <p className="text-white/60">${Number(game.entryFee).toFixed(2)} entry per player</p>
+            <div className="mt-1">
+              <VenmoHandleEditor gameId={game.id} venmoHandle={game.venmoHandle} />
+            </div>
           </div>
           <GameStatusControls gameId={game.id} status={game.status} />
         </div>

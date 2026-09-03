@@ -14,6 +14,7 @@ const schema = z.object({
   type: z.enum(["BINGO", "PICK3"]),
   name: z.string().trim().min(1, "Give the game a name.").max(120),
   entryFee: z.number().positive().optional(),
+  venmoHandle: z.string().trim().max(60).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
       type: parsed.data.type,
       name: parsed.data.name,
       entryFee: parsed.data.entryFee ?? 10,
+      venmoHandle: parsed.data.venmoHandle || null,
     },
   });
 

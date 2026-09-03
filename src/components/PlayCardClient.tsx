@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import BingoGrid, { type GridSquare } from "@/components/BingoGrid";
 import type { SongOption } from "@/components/SongTypeahead";
+import VenmoPaymentPrompt from "@/components/VenmoPaymentPrompt";
 import { FREE_POSITION, computeFirstBingo, getCompletedLines, getMarkedPositions } from "@/lib/bingo";
 
 type CardResponse = {
@@ -17,9 +18,11 @@ type CardResponse = {
     name: string;
     status: string;
     entryFee: string | number;
+    venmoHandle: string | null;
     winnerCardId: string | null;
   } | null;
   shows: { id: string; name: string | null; venue: string | null; showDate: string }[];
+  payment: { paid: boolean; amountDue: number } | null;
 };
 
 const EMPTY_POSITIONS = Array.from({ length: 25 }, (_, i) => i).filter((p) => p !== FREE_POSITION);
@@ -196,6 +199,20 @@ export default function PlayCardClient({
           </p>
         )}
         <BingoGrid mode="view" squares={viewSquares} markedPositions={markedPositions} winningPositions={winningPositions} />
+
+        {data.game.venmoHandle && data.payment && (
+          <div className="mt-6">
+            {data.payment.paid ? (
+              <p className="text-center text-sm text-cheese-teal">✓ You&apos;re paid up for this game.</p>
+            ) : (
+              <VenmoPaymentPrompt
+                venmoHandle={data.game.venmoHandle}
+                amount={data.payment.amountDue}
+                note={data.game.name}
+              />
+            )}
+          </div>
+        )}
       </div>
     );
   }

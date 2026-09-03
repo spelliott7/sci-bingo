@@ -97,16 +97,19 @@ There are two independent layers:
 
 1. Sign in at `/admin/login` with the admin account from the seed step.
 2. `/admin` → **New game** → pick Bingo or Pick 3, give it a name and entry
-   fee. It starts in `DRAFT`.
+   fee, and optionally your Venmo handle (editable later too). It starts in
+   `DRAFT`.
 3. Hit **Activate** when you want players to be able to enter. Only one game
    of each type can be `ACTIVE` at a time (a Bingo game and a Pick 3 game can
    both be active together).
 4. Players sign up / sign in, land on `/`, and build their card or entry (one
    per game; entering also creates their payment record, defaulted to
    **unpaid** — it only flips once you mark it paid yourself after collecting
-   the money however you actually collect it. The dashboard and the game's
-   admin page both show the **pot** — entries × entry fee, regardless of who's
-   paid yet).
+   the money however you actually collect it. If you set a Venmo handle on
+   the game, the player sees a "next step" prompt right after entering — a
+   tap-to-pay Venmo link plus a generated QR code — which disappears once
+   you mark them paid. The dashboard and the game's admin page both show the
+   **pot** — entries × entry fee, regardless of who's paid yet).
 5. On the game's manage page (`/admin/games/[id]`), add each show it covers
    (label, venue, date) — or attach a show that already exists if another
    game covers the same night — and mark songs played against whichever show

@@ -8,6 +8,7 @@ export default function NewGameForm() {
   const [type, setType] = useState<"BINGO" | "PICK3">("BINGO");
   const [name, setName] = useState("");
   const [entryFee, setEntryFee] = useState("10");
+  const [venmoHandle, setVenmoHandle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,6 +24,7 @@ export default function NewGameForm() {
           type,
           name,
           entryFee: entryFee ? Number(entryFee) : undefined,
+          venmoHandle: venmoHandle.trim() || undefined,
         }),
       });
       const json = await res.json();
@@ -94,6 +96,23 @@ export default function NewGameForm() {
           value={entryFee}
           onChange={(e) => setEntryFee(e.target.value)}
         />
+      </div>
+      <div>
+        <label className="label" htmlFor="venmoHandle">
+          Your Venmo handle (optional)
+        </label>
+        <input
+          id="venmoHandle"
+          className="field"
+          value={venmoHandle}
+          onChange={(e) => setVenmoHandle(e.target.value)}
+          placeholder="@your-venmo-name"
+        />
+        <p className="mt-1 text-xs text-white/40">
+          If you set this, players see a pay-via-Venmo prompt (tap link + QR code) right after
+          submitting their card or entry. Leave blank to skip that step. You can add or change it
+          later from the game&apos;s manage page.
+        </p>
       </div>
       {error && <p className="text-sm text-cheese-pink">{error}</p>}
       <button type="submit" disabled={loading} className="btn-primary w-full">

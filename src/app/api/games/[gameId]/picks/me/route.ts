@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
-  const [entry, playedSongs, game, shows] = await Promise.all([
+  const [entry, playedSongs, game, shows, payment] = await Promise.all([
     prisma.pick3Entry.findUnique({
       where: { gameId_userId: { gameId, userId: session.sub } },
       include: { picks: { include: { song: true } } },
@@ -18,7 +18,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
     getPlayedSongsForGame(gameId),
     prisma.game.findUnique({ where: { id: gameId } }),
     getShowsForGame(gameId),
+    prisma.payment.findUnique({ where: { gameId_userId: { gameId, userId: session.sub } } }),
   ]);
 
-  return NextResponse.json({ entry, playedSongs, game, shows });
+  return NextResponse.json({
+    entry,
+    playedSongs,
+    game,
+    shows,
+    payment: payment ? { paid: payment.paid, amountDue: Number(payment.amountDue) } : null,
+  });
 }

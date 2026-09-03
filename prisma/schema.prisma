@@ -85,6 +85,7 @@ model Game {
   name        String
   status      GameStatus @default(DRAFT)
   entryFee    Decimal    @default(10.00) @db.Decimal(10, 2)
+  venmoHandle String?
   createdAt   DateTime   @default(now())
   completedAt DateTime?
 

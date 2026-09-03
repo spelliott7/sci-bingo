@@ -14,6 +14,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
 const schema = z.object({
   status: z.enum(["DRAFT", "ACTIVE", "COMPLETED"]).optional(),
   name: z.string().trim().min(1).max(120).optional(),
+  venmoHandle: z.string().trim().max(60).nullable().optional(),
   winnerCardId: z.string().nullable().optional(),
   winnerEntryId: z.string().nullable().optional(),
 });
@@ -85,6 +86,8 @@ export async function PATCH(
     data: {
       status: parsed.data.status,
       name: parsed.data.name,
+      venmoHandle:
+        parsed.data.venmoHandle === undefined ? undefined : parsed.data.venmoHandle || null,
       winnerCardId,
       winnerEntryId,
       completedAt: parsed.data.status === "COMPLETED" ? new Date() : undefined,
