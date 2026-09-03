@@ -17,9 +17,14 @@ export default function NavBar({ session }: { session: SessionPayload | null }) 
             History
           </Link>
           {session?.role === "ADMIN" && (
-            <Link href="/admin" className="hover:text-cheese-gold">
-              Admin
-            </Link>
+            <>
+              <Link href="/admin" className="hover:text-cheese-gold">
+                Admin
+              </Link>
+              <Link href="/admin/users" className="hover:text-cheese-gold">
+                Users
+              </Link>
+            </>
           )}
           {session ? (
             <>

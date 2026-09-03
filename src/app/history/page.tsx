@@ -1,53 +1,58 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
-import { getCompletedRunsForUser } from "@/lib/historyQueries";
+import { getCompletedGamesForUser } from "@/lib/historyQueries";
 import NavBar from "@/components/NavBar";
 import PosterBackground from "@/components/PosterBackground";
 
+const TYPE_LABEL: Record<string, string> = { BINGO: "Bingo", PICK3: "Pick 3" };
+
 export default async function HistoryPage() {
   const session = await getSession();
-  const { runs, stats } = await getCompletedRunsForUser(session!.sub);
+  const { games, stats } = await getCompletedGamesForUser(session!.sub);
 
   return (
     <>
       <PosterBackground />
       <NavBar session={session} />
       <main className="mx-auto max-w-3xl px-4 py-8">
-        <h1 className="font-display text-2xl text-cheese-gold sm:text-3xl">Run History</h1>
+        <h1 className="font-display text-2xl text-cheese-gold sm:text-3xl">Game History</h1>
 
         <div className="panel mt-4 flex flex-wrap gap-8">
-          <Stat label="Runs you've played" value={stats.totalRunsPlayed} />
+          <Stat label="Games you've played" value={stats.totalGamesPlayed} />
           <Stat label="Wins" value={stats.totalWins} />
         </div>
 
         <div className="mt-6 space-y-3">
-          {runs.length === 0 && (
-            <p className="text-white/60">No runs have wrapped up yet — check back after one ends.</p>
+          {games.length === 0 && (
+            <p className="text-white/60">No games have wrapped up yet — check back after one ends.</p>
           )}
-          {runs.map((run) => (
+          {games.map((game) => (
             <Link
-              key={run.id}
-              href={`/history/${run.id}`}
+              key={game.id}
+              href={`/history/${game.id}`}
               className="panel block hover:border-cheese-gold/60"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="font-display text-lg">{run.name}</p>
-                  {run.completedAt && (
+                  <p className="font-display text-lg">
+                    {game.name}{" "}
+                    <span className="align-middle text-xs font-sans text-white/40">
+                      {TYPE_LABEL[game.type]}
+                    </span>
+                  </p>
+                  {game.completedAt && (
                     <p className="text-sm text-white/60">
-                      Wrapped up {new Date(run.completedAt).toLocaleDateString()}
+                      Wrapped up {new Date(game.completedAt).toLocaleDateString()}
                     </p>
                   )}
                 </div>
-                {run.myCard ? (
-                  run.myCard.isWinner ? (
+                {game.myResult ? (
+                  game.myResult.isWinner ? (
                     <span className="rounded-full bg-cheese-gold/20 px-3 py-1 text-sm font-semibold text-cheese-gold">
                       🏆 You won!
                     </span>
-                  ) : run.myCard.wonBingoAt ? (
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/60">
-                      Got bingo
-                    </span>
+                  ) : game.myResult.wonAt ? (
+                    <span className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/60">Hit</span>
                   ) : (
                     <span className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/60">
                       Played

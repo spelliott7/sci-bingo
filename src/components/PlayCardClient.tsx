@@ -12,7 +12,7 @@ type CardResponse = {
     squares: { position: number; songId: number | null; song: { name: string } | null }[];
   } | null;
   playedSongs: { songId: number; playedAt: string }[];
-  run: {
+  game: {
     id: string;
     name: string;
     status: string;
@@ -25,10 +25,10 @@ type CardResponse = {
 const EMPTY_POSITIONS = Array.from({ length: 25 }, (_, i) => i).filter((p) => p !== FREE_POSITION);
 
 export default function PlayCardClient({
-  runId,
+  gameId,
   defaultPlayerName,
 }: {
-  runId: string;
+  gameId: string;
   defaultPlayerName: string;
 }) {
   const [songs, setSongs] = useState<SongOption[] | null>(null);
@@ -46,12 +46,12 @@ export default function PlayCardClient({
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadCard = useCallback(async () => {
-    const res = await fetch(`/api/runs/${runId}/cards/me`);
+    const res = await fetch(`/api/games/${gameId}/cards/me`);
     if (res.ok) {
       const json: CardResponse = await res.json();
       setData(json);
     }
-  }, [runId]);
+  }, [gameId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,12 +72,12 @@ export default function PlayCardClient({
   }, [loadCard]);
 
   useEffect(() => {
-    if (!data?.card || data.run?.status === "COMPLETED") return;
+    if (!data?.card || data.game?.status === "COMPLETED") return;
     pollRef.current = setInterval(loadCard, 7000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [data?.card, data?.run?.status, loadCard]);
+  }, [data?.card, data?.game?.status, loadCard]);
 
   const playedSongIds = useMemo(
     () => new Set((data?.playedSongs ?? []).map((p) => p.songId)),
@@ -126,7 +126,7 @@ export default function PlayCardClient({
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/runs/${runId}/cards`, {
+      const res = await fetch(`/api/games/${gameId}/cards`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -149,14 +149,14 @@ export default function PlayCardClient({
     return <p className="text-white/70">Loading…</p>;
   }
 
-  if (!data?.run) {
-    return <p className="text-white/70">This run doesn&apos;t exist.</p>;
+  if (!data?.game) {
+    return <p className="text-white/70">This game doesn&apos;t exist.</p>;
   }
 
-  if (data.run.status !== "ACTIVE" && !data.card) {
+  if (data.game.status !== "ACTIVE" && !data.card) {
     return (
       <p className="text-white/70">
-        This run isn&apos;t open for building cards right now — check back once the admin
+        This game isn&apos;t open for building cards right now — check back once the admin
         activates it.
       </p>
     );
@@ -164,12 +164,12 @@ export default function PlayCardClient({
 
   if (data.card) {
     const hasBingo = completedLines.length > 0;
-    const isDeclaredWinner = data.run.winnerCardId === data.card.id;
+    const isDeclaredWinner = data.game.winnerCardId === data.card.id;
     return (
       <div>
         {isDeclaredWinner && (
           <div className="mb-4 rounded-xl border border-cheese-gold bg-cheese-gold/20 p-4 text-center">
-            <p className="font-display text-2xl text-cheese-gold">You won the run! 🎉</p>
+            <p className="font-display text-2xl text-cheese-gold">You won! 🎉</p>
           </div>
         )}
         {!isDeclaredWinner && hasBingo && (
@@ -178,17 +178,17 @@ export default function PlayCardClient({
             {bingoResult && (
               <p className="text-sm text-white/70">
                 Called it at {new Date(bingoResult.playedAt).toLocaleTimeString()}
-                {data.run.status !== "COMPLETED" &&
-                  " — the admin will confirm the run's winner once it wraps up."}
+                {data.game.status !== "COMPLETED" &&
+                  " — the admin will confirm the winner once the game wraps up."}
               </p>
             )}
           </div>
         )}
         <p className="mb-3 text-sm text-white/60">
           Playing as <span className="font-semibold text-white">{data.card.playerName}</span> in{" "}
-          <span className="font-semibold text-white">{data.run.name}</span>
-          {data.run.status !== "COMPLETED" &&
-            " — card updates automatically as songs get marked played across the run's shows."}
+          <span className="font-semibold text-white">{data.game.name}</span>
+          {data.game.status !== "COMPLETED" &&
+            " — card updates automatically as songs get marked played across every show in this game."}
         </p>
         {data.shows.length > 0 && (
           <p className="mb-4 text-xs text-white/40">
@@ -220,7 +220,7 @@ export default function PlayCardClient({
       </div>
       <p className="mb-3 text-sm text-white/60">
         Pick a different song for every square — no repeats. The center is free. This card covers
-        the whole run, so it stays live across every show until the admin wraps it up.
+        the whole game, so it stays live across every show until the admin wraps it up.
       </p>
       <BingoGrid
         mode="build"
@@ -236,7 +236,7 @@ export default function PlayCardClient({
       <button onClick={handleSubmit} disabled={submitting} className="btn-primary mt-4">
         {submitting
           ? "Saving…"
-          : `Save my card ($${Number(data.run.entryFee).toFixed(2)} to play)`}
+          : `Save my card ($${Number(data.game.entryFee).toFixed(2)} to play)`}
       </button>
     </div>
   );

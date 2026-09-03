@@ -15,24 +15,24 @@ type Summary = {
   totalPlayers: number;
   paidCount: number;
   unpaidCount: number;
-  expected: number;
+  pot: number;
   collected: number;
   outstanding: number;
 };
 
-export default function PlayersPaymentsPanel({ runId }: { runId: string }) {
+export default function PlayersPaymentsPanel({ gameId }: { gameId: string }) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/admin/runs/${runId}/players`);
+    const res = await fetch(`/api/admin/games/${gameId}/players`);
     if (res.ok) {
       const json = await res.json();
       setPlayers(json.players);
       setSummary(json.summary);
     }
-  }, [runId]);
+  }, [gameId]);
 
   useEffect(() => {
     // Intentional: fetch immediately on mount, then poll for live payment updates.
@@ -45,7 +45,7 @@ export default function PlayersPaymentsPanel({ runId }: { runId: string }) {
   async function togglePaid(player: Player) {
     setBusyUserId(player.userId);
     try {
-      await fetch(`/api/admin/runs/${runId}/payments/${player.userId}`, {
+      await fetch(`/api/admin/games/${gameId}/payments/${player.userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paid: !player.paid }),
@@ -59,10 +59,11 @@ export default function PlayersPaymentsPanel({ runId }: { runId: string }) {
   return (
     <div>
       {summary && (
-        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
           <SummaryTile label="Players" value={summary.totalPlayers} />
+          <SummaryTile label="Pot" value={`$${summary.pot.toFixed(2)}`} highlight />
           <SummaryTile label="Paid" value={`${summary.paidCount}/${summary.totalPlayers}`} />
-          <SummaryTile label="Collected" value={`$${summary.collected.toFixed(2)}`} highlight />
+          <SummaryTile label="Collected" value={`$${summary.collected.toFixed(2)}`} />
           <SummaryTile label="Outstanding" value={`$${summary.outstanding.toFixed(2)}`} />
         </div>
       )}
@@ -99,7 +100,7 @@ export default function PlayersPaymentsPanel({ runId }: { runId: string }) {
             {players.length === 0 && (
               <tr>
                 <td colSpan={4} className="py-3 text-white/50">
-                  No one has built a card yet.
+                  No one has entered yet.
                 </td>
               </tr>
             )}

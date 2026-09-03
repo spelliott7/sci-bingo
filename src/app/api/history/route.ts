@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getCompletedRunsForUser } from "@/lib/historyQueries";
+import { getCompletedGamesForUser } from "@/lib/historyQueries";
 
 export async function GET() {
   const session = await getSession();
@@ -8,6 +8,6 @@ export async function GET() {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
-  const data = await getCompletedRunsForUser(session.sub);
+  const data = await getCompletedGamesForUser(session.sub);
   return NextResponse.json(data);
 }

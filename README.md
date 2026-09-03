@@ -1,12 +1,18 @@
 # SCI Bingo
 
-Song bingo for String Cheese Incident shows. A **run** is one bingo game that
-can span a handful of **shows** (a 2-3 night run, say) — everyone builds a
-single 5x5 card for the whole run by picking a unique SCI song per square
-(center is free), pays once to play, and watches their card fill in live as
-the admin marks off songs at whichever show they're at. The run stays open
-across every show in it until the admin manually completes it and declares a
-winner.
+Two song-guessing games for String Cheese Incident shows, both built around
+a shared idea: a **game** (Bingo or Pick 3) covers one or more real **shows**
+(a single night, or a 2-3 night run), everyone enters once for the whole
+game, and it stays open across every show it covers until the admin manually
+completes it and declares a winner.
+
+- **Bingo** — build a 5x5 card by picking a unique SCI song per square
+  (center is free).
+- **Pick 3** — pick 3 songs; you hit once all 3 get played.
+
+Shows are shared across games: if a Bingo game and a Pick 3 game both cover
+the same actual concert, the admin marks a song played **once** and both
+games update — no double entry during a live show.
 
 ## Stack
 
@@ -27,8 +33,10 @@ There are two independent layers:
    to an account.
 2. **Accounts** — real registration (username, email, password) for players,
    and a separate `/admin/login` (nickname + password) for whoever's running
-   the board. Admin accounts are created via the seed script, not public
-   registration — see below.
+   the board. The very first admin is created via the seed script (see
+   below); after that, any admin can promote other registered users to admin
+   from `/admin/users` — no need to track a separate list or touch the seed
+   script again.
 
 ## Local setup
 
@@ -39,9 +47,9 @@ There are two independent layers:
 > [nvm](https://github.com/nvm-sh/nvm) (`nvm install --lts`), and either
 > install Docker Desktop with WSL integration for step 2 below, or install
 > Postgres directly in the distro (`sudo apt install postgresql`). This repo
-> was built and fully verified end-to-end (build, lint, tests, and a live
-> gate → register → build-a-card → mark-songs-played → payments → history
-> run) inside WSL2 Ubuntu.
+> was built and fully verified end-to-end (build, lint, tests, and live runs
+> of both game types, including two simultaneous games sharing a show)
+> inside WSL2 Ubuntu.
 
 1. **Install dependencies**
 
@@ -85,31 +93,44 @@ There are two independent layers:
 
    Visit `http://localhost:3000` — you'll land on `/gate` first.
 
-## Running a run
+## Running a game
 
 1. Sign in at `/admin/login` with the admin account from the seed step.
-2. `/admin` → **New run** → give it a name and entry fee. It starts in
-   `DRAFT`.
-3. Hit **Activate** when you want players to be able to build cards. Only one
-   run can be `ACTIVE` at a time.
-4. Players sign up / sign in, land on `/`, and build their card (one per run;
-   card creation also creates their payment record, defaulted to unpaid).
-5. On the run's manage page (`/admin/runs/[id]`), add each show as it comes up
-   (label, venue, date) and mark songs played against whichever show is
-   selected — every player's card updates automatically (polling, every
-   ~5-7s) and circles the matching squares regardless of which show a song
-   was played at. Mark players as **Paid** there too; the page shows total
-   collected vs. outstanding.
-6. The run keeps running across all its shows — nothing ends it automatically.
-   When it's actually over, use **Complete run…** to pick the winner (the
-   admin's call — the page suggests whoever completed a line first, but
+2. `/admin` → **New game** → pick Bingo or Pick 3, give it a name and entry
+   fee. It starts in `DRAFT`.
+3. Hit **Activate** when you want players to be able to enter. Only one game
+   of each type can be `ACTIVE` at a time (a Bingo game and a Pick 3 game can
+   both be active together).
+4. Players sign up / sign in, land on `/`, and build their card or entry (one
+   per game; entering also creates their payment record, defaulted to
+   **unpaid** — it only flips once you mark it paid yourself after collecting
+   the money however you actually collect it. The dashboard and the game's
+   admin page both show the **pot** — entries × entry fee, regardless of who's
+   paid yet).
+5. On the game's manage page (`/admin/games/[id]`), add each show it covers
+   (label, venue, date) — or attach a show that already exists if another
+   game covers the same night — and mark songs played against whichever show
+   is selected. Every player's card/entry updates automatically (polling,
+   every ~5-7s), and so does every *other* active game that also includes
+   that show. Mark players as **Paid** there too once you've actually
+   collected from them.
+6. The game keeps running across all its shows — nothing ends it
+   automatically. When it's actually over, use **Complete game…** to pick the
+   winner (the admin's call — the page suggests whoever hit first, but
    you're not locked into that) and close it out. It'll then show up on
    everyone's `/history` with the winner called out.
 
+## Managing admins
+
+`/admin/users` lists everyone who's registered. Click **Make admin** next to
+anyone who should be running the board — no separate list to maintain, and
+no re-seeding needed. (An admin can't remove their own access, just to avoid
+locking everyone out by accident.)
+
 ## Tests
 
-`src/lib/bingo.ts` (win-line detection, first-to-bingo timing) has unit
-tests:
+`src/lib/bingo.ts` (win-line detection, first-to-bingo timing) and
+`src/lib/pick3.ts` (all-3-hit timing) are pure logic with unit tests:
 
 ```bash
 npm test
@@ -134,4 +155,5 @@ The background (`src/components/PosterBackground.tsx`) is an original,
 hand-built psychedelic jam-band-poster-style collage (gradients + SVG
 mountains/mandala/mushrooms/swirls) — inspired by the general vibe of SCI's
 poster art, not a reproduction of any specific real poster. Treat it as a v1
-to tweak once you've seen it running.
+to tweak once you've seen it running. The favicon (`src/app/icon.png`) is a
+cheese-wedge icon.
