@@ -24,6 +24,7 @@ sci_songs_raw.json
 
 # typescript
 *.tsbuildinfo
+next-env.d.ts
 next-env.d.ts.bak
 
 # prisma
