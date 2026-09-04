@@ -1,13 +1,23 @@
 /**
  * Original, hand-drawn psychedelic jam-band-poster-style backdrop:
- * layered gradients + SVG mountains / mandala sun / mushrooms / swirls / stars.
- * Not a reproduction of any specific real poster — just channeling the vibe
- * (tie-dye colors, nature + cosmic motifs, bold flat linework) as a v1 look
- * to tweak from.
+ * layered gradients + SVG mountains / mandala sun / jellyfish / mushrooms /
+ * swirls / stars. Not a reproduction of any specific real poster — just
+ * channeling the vibe (tie-dye colors, nature + cosmic motifs, bold flat
+ * linework, floating jellyfish) as a v1 look to tweak from.
  */
 export default function PosterBackground() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden bg-cheese-radial" aria-hidden="true">
+      {/* jellyfish bloom, upper left — balances the mandala sun */}
+      <svg
+        className="absolute -left-10 -top-10 h-64 w-64 opacity-70 sm:h-80 sm:w-80"
+        viewBox="0 0 100 100"
+      >
+        <Jellyfish x={30} y={20} scale={1.1} bell="#ff5fa2" />
+        <Jellyfish x={62} y={40} scale={0.7} bell="#0f9c9c" />
+        <Jellyfish x={10} y={55} scale={0.55} bell="#ffb100" />
+      </svg>
+
       {/* mandala sun, upper right */}
       <svg
         className="absolute -right-16 -top-16 h-72 w-72 opacity-70 sm:h-96 sm:w-96"
@@ -118,6 +128,43 @@ function Mushroom({
       <circle cx="5" cy="9" r="1.6" fill="white" fillOpacity="0.8" />
       <circle cx="12" cy="6" r="1.2" fill="white" fillOpacity="0.8" />
       <circle cx="16" cy="10" r="1" fill="white" fillOpacity="0.8" />
+    </g>
+  );
+}
+
+function Jellyfish({
+  x,
+  y,
+  scale,
+  bell,
+}: {
+  x: number;
+  y: number;
+  scale: number;
+  bell: string;
+}) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      {/* dome + scalloped skirt */}
+      <path
+        d="M-10 0 C -10 -12, 10 -12, 10 0 C 10 2, 7 1, 5 3 C 3 1, 1 2, -1 0 C -3 2, -5 1, -7 3 C -9 1, -10 2, -10 0 Z"
+        fill={bell}
+        fillOpacity="0.75"
+      />
+      <path
+        d="M-10 -1 C -6 -9, 6 -9, 10 -1"
+        fill="none"
+        stroke="white"
+        strokeOpacity="0.5"
+        strokeWidth="1"
+      />
+      {/* trailing tentacles */}
+      <path d="M-6 2 C -8 8, -4 10, -6 16" fill="none" stroke={bell} strokeOpacity="0.6" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M-2 3 C -3 10, 1 12, -1 20" fill="none" stroke={bell} strokeOpacity="0.55" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M2 3 C 3 9, -1 12, 2 18" fill="none" stroke={bell} strokeOpacity="0.55" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M6 2 C 8 9, 4 11, 7 17" fill="none" stroke={bell} strokeOpacity="0.6" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="-4" cy="-6" r="1" fill="white" fillOpacity="0.8" />
+      <circle cx="3" cy="-7" r="0.8" fill="white" fillOpacity="0.7" />
     </g>
   );
 }
