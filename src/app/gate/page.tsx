@@ -39,7 +39,7 @@ function GateForm() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="panel w-full max-w-md text-center">
-        <h1 className="font-display text-3xl text-cheese-gold sm:text-4xl">SCI Bingo</h1>
+        <h1 className="title-gradient font-display text-3xl sm:text-4xl">SCI Bingo</h1>
         <p className="mt-2 text-white/70">
           This game is just for our crew. Enter the keyword and password to get in.
         </p>

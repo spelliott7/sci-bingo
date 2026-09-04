@@ -45,7 +45,7 @@ export default async function DashboardPage() {
       <PosterBackground />
       <NavBar session={session} />
       <main className="mx-auto max-w-3xl px-4 py-10">
-        <h1 className="font-display text-3xl text-cheese-gold sm:text-4xl">
+        <h1 className="title-gradient font-display text-3xl sm:text-4xl">
           Hey {session?.username} 👋
         </h1>
 

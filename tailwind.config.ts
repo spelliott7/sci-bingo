@@ -23,6 +23,8 @@ const config: Config = {
       backgroundImage: {
         "cheese-radial":
           "radial-gradient(circle at 20% 20%, rgba(255,177,0,0.35), transparent 40%), radial-gradient(circle at 80% 15%, rgba(255,95,162,0.35), transparent 45%), radial-gradient(circle at 50% 80%, rgba(15,156,156,0.35), transparent 50%), linear-gradient(160deg, #160a26 0%, #3b1360 45%, #6b2fb3 100%)",
+        "cheese-cosmic":
+          "radial-gradient(ellipse at 50% 0%, rgba(107,47,179,0.5), transparent 60%), linear-gradient(180deg, #0a0518 0%, #160a26 40%, #1c0f36 75%, #0a0518 100%)",
       },
       boxShadow: {
         glow: "0 0 25px rgba(255,177,0,0.45)",

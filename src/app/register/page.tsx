@@ -40,7 +40,7 @@ export default function RegisterPage() {
       <PosterBackground />
       <main className="flex min-h-screen items-center justify-center px-4">
         <div className="panel w-full max-w-md">
-          <h1 className="font-display text-2xl text-cheese-gold">Create your account</h1>
+          <h1 className="title-gradient font-display text-2xl">Create your account</h1>
           <p className="mt-1 text-sm text-white/70">
             Just a username, email, and password — this is how we track your cards and history.
           </p>

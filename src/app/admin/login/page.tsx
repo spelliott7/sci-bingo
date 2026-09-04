@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
       <PosterBackground />
       <main className="flex min-h-screen items-center justify-center px-4">
         <div className="panel w-full max-w-md">
-          <h1 className="font-display text-2xl text-cheese-gold">Admin sign in</h1>
+          <h1 className="title-gradient font-display text-2xl">Admin sign in</h1>
           <p className="mt-1 text-sm text-white/70">
             For whoever&apos;s running the board tonight.
           </p>

@@ -39,7 +39,7 @@ export default function LoginPage() {
       <PosterBackground />
       <main className="flex min-h-screen items-center justify-center px-4">
         <div className="panel w-full max-w-md">
-          <h1 className="font-display text-2xl text-cheese-gold">Welcome back</h1>
+          <h1 className="title-gradient font-display text-2xl">Welcome back</h1>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
               <label className="label" htmlFor="identifier">
