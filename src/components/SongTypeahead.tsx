@@ -18,6 +18,9 @@ type Props = {
 
 const MAX_RESULTS = 40;
 
+const DROPDOWN_WIDTH = 288;
+const VIEWPORT_MARGIN = 12;
+
 export default function SongTypeahead({
   songs,
   value,
@@ -31,7 +34,29 @@ export default function SongTypeahead({
   const [query, setQuery] = useState(selected?.name ?? "");
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
+  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; left: number; width: number } | null>(
+    null,
+  );
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputWrapperRef = useRef<HTMLDivElement>(null);
+
+  // The song picker often lives in a narrow grid cell (as little as ~70px on
+  // a phone), which would otherwise force the dropdown list to that same
+  // unusable width. Break it out to a fixed, comfortable width positioned
+  // under the input, clamped so it never runs off either edge of the
+  // viewport regardless of which column the cell sits in.
+  function openDropdown() {
+    const rect = inputWrapperRef.current?.getBoundingClientRect();
+    if (rect) {
+      const width = Math.min(DROPDOWN_WIDTH, window.innerWidth - VIEWPORT_MARGIN * 2);
+      const left = Math.min(
+        Math.max(rect.left, VIEWPORT_MARGIN),
+        window.innerWidth - width - VIEWPORT_MARGIN,
+      );
+      setDropdownStyle({ top: rect.bottom + 4, left, width });
+    }
+    setOpen(true);
+  }
 
   // Keep the visible text in sync with the selected song without an effect:
   // adjust state during render when the externally-controlled `value` changes.
@@ -52,6 +77,22 @@ export default function SongTypeahead({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [selected]);
 
+  // The dropdown is fixed-positioned (so it can break out of a narrow grid
+  // cell), which means it won't track the page scrolling under it — close it
+  // instead of leaving it floating in the wrong place.
+  useEffect(() => {
+    if (!open) return;
+    function handleScroll() {
+      setOpen(false);
+    }
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [open]);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     const available = songs.filter((s) => s.id === value || !excludeIds?.has(s.id));
@@ -68,7 +109,7 @@ export default function SongTypeahead({
   function clearSelection() {
     onChange(null);
     setQuery("");
-    setOpen(true);
+    openDropdown();
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -91,16 +132,16 @@ export default function SongTypeahead({
 
   return (
     <div ref={containerRef} className="relative">
-      <div className="relative">
+      <div ref={inputWrapperRef} className="relative">
         <input
           className="field pr-8 text-sm"
           value={query}
           disabled={disabled}
           placeholder={placeholder}
-          onFocus={() => setOpen(true)}
+          onFocus={openDropdown}
           onChange={(e) => {
             setQuery(e.target.value);
-            setOpen(true);
+            openDropdown();
             setHighlighted(0);
           }}
           onKeyDown={handleKeyDown}
@@ -120,11 +161,12 @@ export default function SongTypeahead({
           </button>
         )}
       </div>
-      {open && !disabled && (
+      {open && !disabled && dropdownStyle && (
         <ul
           id={listboxId}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-white/20 bg-cheese-purple shadow-xl"
+          style={{ top: dropdownStyle.top, left: dropdownStyle.left, width: dropdownStyle.width }}
+          className="fixed z-20 max-h-56 overflow-auto rounded-lg border border-white/20 bg-cheese-purple shadow-xl"
         >
           {results.length === 0 && (
             <li className="px-3 py-2 text-sm text-white/50">No songs match.</li>

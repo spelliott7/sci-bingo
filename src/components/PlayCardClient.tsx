@@ -45,6 +45,7 @@ export default function PlayCardClient({
     EMPTY_POSITIONS.map((position) => ({ position, songId: null })),
   );
   const [submitting, setSubmitting] = useState(false);
+  const [builderLayout, setBuilderLayout] = useState<"grid" | "list">("list");
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -235,12 +236,35 @@ export default function PlayCardClient({
           maxLength={60}
         />
       </div>
-      <p className="mb-3 text-sm text-white/60">
-        Pick a different song for every square — no repeats. The center is free. This card covers
-        the whole game, so it stays live across every show until the admin wraps it up.
-      </p>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-sm text-white/60">
+          Pick a different song for every square — no repeats. The center is free. This card
+          covers the whole game, so it stays live across every show until the admin wraps it up.
+        </p>
+        <div className="flex shrink-0 rounded-full border border-white/20 bg-white/5 p-0.5 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setBuilderLayout("list")}
+            className={`rounded-full px-3 py-1 transition ${
+              builderLayout === "list" ? "bg-cheese-gold text-cheese-ink" : "text-white/60"
+            }`}
+          >
+            List
+          </button>
+          <button
+            type="button"
+            onClick={() => setBuilderLayout("grid")}
+            className={`rounded-full px-3 py-1 transition ${
+              builderLayout === "grid" ? "bg-cheese-gold text-cheese-ink" : "text-white/60"
+            }`}
+          >
+            Grid
+          </button>
+        </div>
+      </div>
       <BingoGrid
         mode="build"
+        layout={builderLayout}
         songs={songs}
         squares={builderSquares}
         onChangeSquare={(position, songId) =>
