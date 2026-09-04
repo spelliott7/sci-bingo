@@ -15,8 +15,8 @@ const schema = z.object({
   status: z.enum(["DRAFT", "ACTIVE", "COMPLETED"]).optional(),
   name: z.string().trim().min(1).max(120).optional(),
   venmoHandle: z.string().trim().max(60).nullable().optional(),
-  winnerCardId: z.string().nullable().optional(),
-  winnerEntryId: z.string().nullable().optional(),
+  winnerCardIds: z.array(z.string()).optional(),
+  winnerEntryIds: z.array(z.string()).optional(),
 });
 
 export async function PATCH(
@@ -50,32 +50,42 @@ export async function PATCH(
     }
   }
 
-  let winnerCardId: string | null | undefined = undefined;
-  let winnerEntryId: string | null | undefined = undefined;
+  let winnerCardIds: string[] | undefined = undefined;
+  let winnerEntryIds: string[] | undefined = undefined;
 
   if (parsed.data.status === "COMPLETED") {
-    const winnerKey = game.type === "BINGO" ? "winnerCardId" : "winnerEntryId";
+    const winnerKey = game.type === "BINGO" ? "winnerCardIds" : "winnerEntryIds";
     if (!rawBody || typeof rawBody !== "object" || !(winnerKey in rawBody)) {
       return NextResponse.json(
-        { error: "Select a winner (or confirm no winner) before completing the game." },
+        { error: "Select the winner(s) (or confirm no winner) before completing the game." },
         { status: 400 },
       );
     }
 
     if (game.type === "BINGO") {
-      winnerCardId = parsed.data.winnerCardId ?? null;
-      if (winnerCardId) {
-        const card = await prisma.bingoCard.findUnique({ where: { id: winnerCardId } });
-        if (!card || card.gameId !== game.id) {
-          return NextResponse.json({ error: "That card isn't part of this game." }, { status: 400 });
+      winnerCardIds = parsed.data.winnerCardIds ?? [];
+      if (winnerCardIds.length > 0) {
+        const count = await prisma.bingoCard.count({
+          where: { id: { in: winnerCardIds }, gameId: game.id },
+        });
+        if (count !== winnerCardIds.length) {
+          return NextResponse.json(
+            { error: "One or more selected cards aren't part of this game." },
+            { status: 400 },
+          );
         }
       }
     } else {
-      winnerEntryId = parsed.data.winnerEntryId ?? null;
-      if (winnerEntryId) {
-        const entry = await prisma.pick3Entry.findUnique({ where: { id: winnerEntryId } });
-        if (!entry || entry.gameId !== game.id) {
-          return NextResponse.json({ error: "That entry isn't part of this game." }, { status: 400 });
+      winnerEntryIds = parsed.data.winnerEntryIds ?? [];
+      if (winnerEntryIds.length > 0) {
+        const count = await prisma.pick3Entry.count({
+          where: { id: { in: winnerEntryIds }, gameId: game.id },
+        });
+        if (count !== winnerEntryIds.length) {
+          return NextResponse.json(
+            { error: "One or more selected entries aren't part of this game." },
+            { status: 400 },
+          );
         }
       }
     }
@@ -88,8 +98,8 @@ export async function PATCH(
       name: parsed.data.name,
       venmoHandle:
         parsed.data.venmoHandle === undefined ? undefined : parsed.data.venmoHandle || null,
-      winnerCardId,
-      winnerEntryId,
+      winnerCardIds,
+      winnerEntryIds,
       completedAt: parsed.data.status === "COMPLETED" ? new Date() : undefined,
     },
   });

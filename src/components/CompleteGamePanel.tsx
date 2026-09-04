@@ -21,16 +21,22 @@ export default function CompleteGamePanel({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [players, setPlayers] = useState<Player[] | null>(null);
-  const [winnerEntryId, setWinnerEntryId] = useState<string | null>(null);
+  const [winnerEntryIds, setWinnerEntryIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const suggestedWinner = useMemo(() => {
-    if (!players) return null;
+  // The earliest wonAt among everyone who has one — if more than one player
+  // shares that exact moment, it's a genuine tie (e.g. the same called song
+  // completed two different cards' lines at once) and the pot should split.
+  const suggestedWinners = useMemo(() => {
+    if (!players) return [];
     const withWin = players.filter((p) => p.wonAt);
-    if (withWin.length === 0) return null;
-    return withWin.sort((a, b) => a.wonAt!.localeCompare(b.wonAt!))[0];
+    if (withWin.length === 0) return [];
+    const earliest = withWin.reduce((min, p) => (p.wonAt! < min ? p.wonAt! : min), withWin[0].wonAt!);
+    return withWin.filter((p) => p.wonAt === earliest);
   }, [players]);
+
+  const isTie = suggestedWinners.length > 1;
 
   useEffect(() => {
     if (!open) return;
@@ -46,24 +52,31 @@ export default function CompleteGamePanel({
     };
   }, [open, gameId]);
 
-  // Default the selection to the suggested winner the first time it becomes known,
-  // without stomping on a choice the admin already made — adjust during render
-  // instead of in an effect (see https://react.dev/learn/you-might-not-need-an-effect).
-  const [appliedSuggestedId, setAppliedSuggestedId] = useState<string | null>(null);
-  if (suggestedWinner && suggestedWinner.entryId !== appliedSuggestedId) {
-    setAppliedSuggestedId(suggestedWinner.entryId);
-    setWinnerEntryId(suggestedWinner.entryId);
+  // Default the selection to the suggested winner(s) the first time they become
+  // known, without stomping on a choice the admin already made — adjust during
+  // render instead of in an effect (see https://react.dev/learn/you-might-not-need-an-effect).
+  const [appliedSuggestedKey, setAppliedSuggestedKey] = useState<string | null>(null);
+  const suggestedKey = suggestedWinners.map((p) => p.entryId).join(",");
+  if (suggestedWinners.length > 0 && suggestedKey !== appliedSuggestedKey) {
+    setAppliedSuggestedKey(suggestedKey);
+    setWinnerEntryIds(suggestedWinners.map((p) => p.entryId));
+  }
+
+  function toggleWinner(entryId: string) {
+    setWinnerEntryIds((prev) =>
+      prev.includes(entryId) ? prev.filter((id) => id !== entryId) : [...prev, entryId],
+    );
   }
 
   async function handleComplete() {
     setError(null);
     setSubmitting(true);
     try {
-      const winnerKey = type === "BINGO" ? "winnerCardId" : "winnerEntryId";
+      const winnerKey = type === "BINGO" ? "winnerCardIds" : "winnerEntryIds";
       const res = await fetch(`/api/admin/games/${gameId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "COMPLETED", [winnerKey]: winnerEntryId }),
+        body: JSON.stringify({ status: "COMPLETED", [winnerKey]: winnerEntryIds }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -88,9 +101,15 @@ export default function CompleteGamePanel({
     <div className="panel mt-4 border-cheese-gold/40">
       <h3 className="font-display text-lg text-cheese-gold">Wrap up this game</h3>
       <p className="mt-1 text-sm text-white/60">
-        Pick the winner before completing — once completed, players will see the final result and
-        entries stop updating.
+        Pick the winner(s) before completing — once completed, players will see the final result
+        and entries stop updating.
       </p>
+      {isTie && (
+        <p className="mt-2 rounded-lg bg-cheese-gold/15 px-3 py-2 text-sm text-cheese-gold">
+          🎉 Tie detected — {suggestedWinners.length} players hit at the exact same moment.
+          They&apos;re all checked below; uncheck any that shouldn&apos;t split the pot.
+        </p>
+      )}
 
       {!players ? (
         <p className="mt-3 text-sm text-white/50">Loading players…</p>
@@ -105,10 +124,9 @@ export default function CompleteGamePanel({
             >
               <span className="flex items-center gap-2">
                 <input
-                  type="radio"
-                  name="winner"
-                  checked={winnerEntryId === p.entryId}
-                  onChange={() => setWinnerEntryId(p.entryId)}
+                  type="checkbox"
+                  checked={winnerEntryIds.includes(p.entryId)}
+                  onChange={() => toggleWinner(p.entryId)}
                 />
                 <span className="font-semibold">{p.playerName}</span>
                 <span className="text-white/50">@{p.username}</span>
@@ -122,16 +140,13 @@ export default function CompleteGamePanel({
               )}
             </label>
           ))}
-          <label className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm">
-            <input
-              type="radio"
-              name="winner"
-              checked={winnerEntryId === null}
-              onChange={() => setWinnerEntryId(null)}
-            />
-            No winner
-          </label>
         </div>
+      )}
+
+      {winnerEntryIds.length > 1 && (
+        <p className="mt-2 text-xs text-white/50">
+          {winnerEntryIds.length} winners selected — split the pot between them.
+        </p>
       )}
 
       {error && <p className="mt-2 text-sm text-cheese-pink">{error}</p>}

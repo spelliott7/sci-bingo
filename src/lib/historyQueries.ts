@@ -25,7 +25,7 @@ export async function getCompletedGamesForUser(userId: string) {
           myResult = {
             playerName: card.playerName,
             wonAt: bingo ? bingo.playedAt.toISOString() : null,
-            isWinner: game.winnerCardId === card.id,
+            isWinner: game.winnerCardIds.includes(card.id),
           };
         }
       } else {
@@ -38,7 +38,7 @@ export async function getCompletedGamesForUser(userId: string) {
           myResult = {
             playerName: entry.playerName,
             wonAt: wonAt ? wonAt.toISOString() : null,
-            isWinner: game.winnerEntryId === entry.id,
+            isWinner: game.winnerEntryIds.includes(entry.id),
           };
         }
       }
@@ -106,7 +106,7 @@ export async function getGameHistoryDetail(gameId: string, viewerUserId: string)
           playerName: card.playerName,
           username: card.user.username,
           isMe: card.userId === viewerUserId,
-          isWinner: game.winnerCardId === card.id,
+          isWinner: game.winnerCardIds.includes(card.id),
           wonAt: bingo ? bingo.playedAt.toISOString() : null,
           markedCount: getMarkedPositions(card.squares, playedSongIds).size,
           squares: card.squares.map((s) => ({
@@ -137,7 +137,7 @@ export async function getGameHistoryDetail(gameId: string, viewerUserId: string)
         playerName: entry.playerName,
         username: entry.user.username,
         isMe: entry.userId === viewerUserId,
-        isWinner: game.winnerEntryId === entry.id,
+        isWinner: game.winnerEntryIds.includes(entry.id),
         wonAt: wonAt ? wonAt.toISOString() : null,
         markedCount: entry.picks.filter((p) => playedSongIds.has(p.songId)).length,
         picks: entry.picks.map((p) => ({ songId: p.songId, songName: p.song.name })),

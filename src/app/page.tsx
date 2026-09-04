@@ -1,10 +1,8 @@
-import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import NavBar from "@/components/NavBar";
 import PosterBackground from "@/components/PosterBackground";
-
-const TYPE_LABEL: Record<string, string> = { BINGO: "Bingo", PICK3: "Pick 3" };
+import DashboardGames from "@/components/DashboardGames";
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -32,10 +30,21 @@ export default async function DashboardPage() {
       ]);
       const playerCount = game.type === "BINGO" ? game._count.cards : game._count.entries;
       return {
-        game,
-        hasEntered: Boolean(myCard || myEntry),
-        shows: gameShows.map((gs) => gs.show).sort((a, b) => +a.showDate - +b.showDate),
+        id: game.id,
+        type: game.type,
+        name: game.name,
+        entryFee: Number(game.entryFee),
         pot: playerCount * Number(game.entryFee),
+        playerCount,
+        hasEntered: Boolean(myCard || myEntry),
+        shows: gameShows
+          .map((gs) => ({
+            id: gs.show.id,
+            name: gs.show.name,
+            venue: gs.show.venue,
+            showDate: gs.show.showDate.toISOString(),
+          }))
+          .sort((a, b) => +new Date(a.showDate) - +new Date(b.showDate)),
       };
     }),
   );
@@ -49,48 +58,7 @@ export default async function DashboardPage() {
           Hey {session?.username} 👋
         </h1>
 
-        {gameDetails.length === 0 && (
-          <div className="panel mt-6">
-            <p className="text-white/70">
-              No games are active right now. Check back once the admin kicks one off, or browse{" "}
-              <Link href="/history" className="text-cheese-gold hover:underline">
-                past games
-              </Link>
-              .
-            </p>
-          </div>
-        )}
-
-        {gameDetails.map(({ game, hasEntered, shows, pot }) => (
-          <div key={game.id} className="panel mt-6">
-            <div className="flex items-center gap-2">
-              <p className="text-sm uppercase tracking-wide text-cheese-teal">{TYPE_LABEL[game.type]}</p>
-            </div>
-            <h2 className="mt-1 font-display text-2xl">{game.name}</h2>
-            {shows.length > 0 ? (
-              <ul className="mt-2 space-y-0.5 text-sm text-white/50">
-                {shows.map((show) => (
-                  <li key={show.id}>
-                    {show.name ? `${show.name} — ` : ""}
-                    {show.venue ? `${show.venue}, ` : ""}
-                    {new Date(show.showDate).toLocaleDateString()}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm text-white/50">Shows haven&apos;t been added yet.</p>
-            )}
-            <p className="mt-2 text-sm">
-              Pot so far: <span className="font-semibold text-cheese-gold">${pot.toFixed(2)}</span>
-            </p>
-            <Link
-              href={game.type === "BINGO" ? `/play/${game.id}` : `/pick3/${game.id}`}
-              className="btn-primary mt-4 inline-block"
-            >
-              {hasEntered ? "View your entry" : `Enter — $${Number(game.entryFee).toFixed(2)}`}
-            </Link>
-          </div>
-        ))}
+        <DashboardGames initialGames={gameDetails} />
       </main>
     </>
   );

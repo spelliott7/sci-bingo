@@ -194,6 +194,14 @@ function AddShowForm({
         </button>
       </div>
 
+      <p className="mt-2 text-xs text-cheese-pink">
+        ⚠️ The earliest show&apos;s date/time across all of a game&apos;s shows is the{" "}
+        <strong>final cutoff</strong> for entries — no new cards/entries, and no edits to existing
+        ones, after that moment. This is enforced by the clock, regardless of whether the band has
+        actually taken the stage yet, so pick a time you&apos;re comfortable locking things at
+        (e.g. doors time, not necessarily the exact downbeat).
+      </p>
+
       {mode === "existing" ? (
         <div className="flex flex-wrap items-end gap-2">
           <div>

@@ -20,14 +20,22 @@ export default async function AdminGamePage({
   const session = await getSession();
   const game = await prisma.game.findUnique({
     where: { id: gameId },
-    include: {
-      winnerCard: { include: { user: { select: { username: true } } } },
-      winnerEntry: { include: { user: { select: { username: true } } } },
-    },
+    include: { _count: { select: { shows: true } } },
   });
   if (!game) notFound();
 
-  const winner = game.winnerCard ?? game.winnerEntry;
+  const winners =
+    game.status === "COMPLETED"
+      ? game.type === "BINGO"
+        ? await prisma.bingoCard.findMany({
+            where: { id: { in: game.winnerCardIds } },
+            include: { user: { select: { username: true } } },
+          })
+        : await prisma.pick3Entry.findMany({
+            where: { id: { in: game.winnerEntryIds } },
+            include: { user: { select: { username: true } } },
+          })
+      : [];
 
   return (
     <>
@@ -50,11 +58,33 @@ export default async function AdminGamePage({
           <GameStatusControls gameId={game.id} status={game.status} />
         </div>
 
+        {game.status === "DRAFT" && (
+          <div className="panel mt-6 border-cheese-teal/40">
+            <h2 className="font-display text-lg text-cheese-teal">Before you activate</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              <li className={game.venmoHandle ? "text-white/50 line-through" : "text-white/80"}>
+                {game.venmoHandle ? "✓" : "☐"} Set your Venmo handle above, so players see a
+                pay-via-Venmo prompt right after entering (or skip this if you&apos;re collecting
+                another way).
+              </li>
+              <li className={game._count.shows > 0 ? "text-white/50 line-through" : "text-white/80"}>
+                {game._count.shows > 0 ? "✓" : "☐"} Add at least one show below.
+              </li>
+              <li className="text-white/80">
+                ☐ Hit <span className="font-semibold text-cheese-gold">Activate</span> above once
+                you&apos;re ready for players to start entering.
+              </li>
+            </ul>
+          </div>
+        )}
+
         {game.status === "COMPLETED" && (
           <div className="panel mt-6 border-cheese-gold/50 text-center">
-            {winner ? (
+            {winners.length > 0 ? (
               <p className="font-display text-xl text-cheese-gold">
-                🏆 {winner.playerName} (@{winner.user.username}) won this game!
+                🏆{" "}
+                {winners.map((w) => `${w.playerName} (@${w.user.username})`).join(" & ")}{" "}
+                {winners.length > 1 ? "tied to win this game — split the pot!" : "won this game!"}
               </p>
             ) : (
               <p className="text-white/60">This game wrapped up without a declared winner.</p>

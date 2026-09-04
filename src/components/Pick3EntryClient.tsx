@@ -18,10 +18,11 @@ type EntryResponse = {
     status: string;
     entryFee: string | number;
     venmoHandle: string | null;
-    winnerEntryId: string | null;
+    winnerEntryIds: string[];
   } | null;
   shows: { id: string; name: string | null; venue: string | null; showDate: string }[];
   payment: { paid: boolean; amountDue: number } | null;
+  entryLockAt: string | null;
 };
 
 export default function Pick3EntryClient({
@@ -35,6 +36,7 @@ export default function Pick3EntryClient({
   const [data, setData] = useState<EntryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const [playerName, setPlayerName] = useState(defaultPlayerName);
   const [picks, setPicks] = useState<(number | null)[]>(Array(PICK3_COUNT).fill(null));
@@ -89,6 +91,17 @@ export default function Pick3EntryClient({
     );
   }, [data, entryPicks]);
 
+  const entryLockAt = data?.entryLockAt ? new Date(data.entryLockAt) : null;
+  const isLocked = entryLockAt !== null && entryLockAt <= new Date();
+
+  function startEditing() {
+    if (!data?.entry) return;
+    setPlayerName(data.entry.playerName);
+    setPicks(data.entry.picks.map((p) => p.songId));
+    setError(null);
+    setIsEditing(true);
+  }
+
   async function handleSubmit() {
     setError(null);
     if (picks.some((p) => p === null)) {
@@ -103,7 +116,7 @@ export default function Pick3EntryClient({
     setSubmitting(true);
     try {
       const res = await fetch(`/api/games/${gameId}/picks`, {
-        method: "POST",
+        method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerName: playerName.trim(), songIds: picks }),
       });
@@ -112,6 +125,7 @@ export default function Pick3EntryClient({
         setError(json.error ?? "Couldn't save your entry.");
         return;
       }
+      setIsEditing(false);
       await loadEntry();
     } finally {
       setSubmitting(false);
@@ -134,13 +148,20 @@ export default function Pick3EntryClient({
     );
   }
 
-  if (data.entry) {
-    const isDeclaredWinner = data.game.winnerEntryId === data.entry.id;
+  if (data.entry && !isEditing) {
+    const isDeclaredWinner = data.game.winnerEntryIds.includes(data.entry.id);
     return (
       <div>
         {isDeclaredWinner && (
           <div className="mb-4 rounded-xl border border-cheese-gold bg-cheese-gold/20 p-4 text-center">
-            <p className="font-display text-2xl text-cheese-gold">You won! 🎉</p>
+            <p className="font-display text-2xl text-cheese-gold">
+              {data.game.winnerEntryIds.length > 1 ? "You tied for the win! 🎉" : "You won! 🎉"}
+            </p>
+            {data.game.winnerEntryIds.length > 1 && (
+              <p className="text-sm text-white/70">
+                More than one entry hit at the same moment — the pot gets split.
+              </p>
+            )}
           </div>
         )}
         {!isDeclaredWinner && isHit && (
@@ -160,10 +181,27 @@ export default function Pick3EntryClient({
           <span className="font-semibold text-white">{data.game.name}</span>
         </p>
         {data.shows.length > 0 && (
-          <p className="mb-4 text-xs text-white/40">
+          <p className="mb-2 text-xs text-white/40">
             Shows: {data.shows.map((s) => new Date(s.showDate).toLocaleDateString()).join(", ")}
           </p>
         )}
+        {data.game.status === "ACTIVE" &&
+          (isLocked ? (
+            <p className="mb-4 text-xs text-cheese-pink">
+              Entries are locked — the show has started, so this entry can no longer be edited.
+            </p>
+          ) : (
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg bg-white/5 px-3 py-2">
+              <p className="text-xs text-white/50">
+                {entryLockAt
+                  ? `You can edit this entry until ${entryLockAt.toLocaleString()}.`
+                  : "You can edit this entry until the admin adds a show and it starts."}
+              </p>
+              <button className="btn-secondary shrink-0 text-xs" onClick={startEditing}>
+                Edit my entry
+              </button>
+            </div>
+          ))}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {data.entry.picks.map((pick) => {
             const hit = hitSongIds.has(pick.songId);
@@ -203,6 +241,15 @@ export default function Pick3EntryClient({
     return <p className="text-white/70">Loading songs…</p>;
   }
 
+  if (isLocked && !data.entry) {
+    return (
+      <p className="text-white/70">
+        Entries closed once the show started — no new entries can be created for this game
+        anymore.
+      </p>
+    );
+  }
+
   const selectedIds = new Set(picks.filter((p): p is number => p !== null));
 
   return (
@@ -219,10 +266,16 @@ export default function Pick3EntryClient({
           maxLength={60}
         />
       </div>
-      <p className="mb-3 text-sm text-white/60">
+      <p className="mb-1 text-sm text-white/60">
         Pick 3 different songs. You hit if all 3 get played at any show in this game.
       </p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {entryLockAt && (
+        <p className="mb-3 text-xs text-white/40">
+          {isEditing ? "Edit" : "Entries"} close at {entryLockAt.toLocaleString()}, when the show
+          starts.
+        </p>
+      )}
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {picks.map((songId, i) => {
           const excludeIds = new Set(selectedIds);
           if (songId !== null) excludeIds.delete(songId);
@@ -241,11 +294,28 @@ export default function Pick3EntryClient({
         })}
       </div>
       {error && <p className="mt-3 text-sm text-cheese-pink">{error}</p>}
-      <button onClick={handleSubmit} disabled={submitting} className="btn-primary mt-4">
-        {submitting
-          ? "Saving…"
-          : `Save my entry ($${Number(data.game.entryFee).toFixed(2)} to play)`}
-      </button>
+      <div className="mt-4 flex gap-2">
+        <button onClick={handleSubmit} disabled={submitting} className="btn-primary">
+          {submitting
+            ? "Saving…"
+            : isEditing
+              ? "Save changes"
+              : `Save my entry ($${Number(data.game.entryFee).toFixed(2)} to play)`}
+        </button>
+        {isEditing && (
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={submitting}
+            onClick={() => {
+              setIsEditing(false);
+              setError(null);
+            }}
+          >
+            Cancel
+          </button>
+        )}
+      </div>
     </div>
   );
 }

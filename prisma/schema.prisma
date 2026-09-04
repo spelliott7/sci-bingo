@@ -95,10 +95,9 @@ model Game {
   entries  Pick3Entry[] @relation("GameEntries")
   payments Payment[]
 
-  winnerCardId String?     @unique
-  winnerCard   BingoCard?  @relation("GameBingoWinner", fields: [winnerCardId], references: [id])
-  winnerEntryId String?    @unique
-  winnerEntry  Pick3Entry? @relation("GamePick3Winner", fields: [winnerEntryId], references: [id])
+  /// Usually one ID, but more than one means a tie — split the pot between them.
+  winnerCardIds  String[] @default([])
+  winnerEntryIds String[] @default([])
 }
 
 model GameShow {
@@ -121,7 +120,6 @@ model BingoCard {
   game    Game         @relation("GameCards", fields: [gameId], references: [id], onDelete: Cascade)
   user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   squares CardSquare[]
-  wonGame Game?        @relation("GameBingoWinner")
 
   @@unique([gameId, userId])
 }
@@ -148,7 +146,6 @@ model Pick3Entry {
   game    Game        @relation("GameEntries", fields: [gameId], references: [id], onDelete: Cascade)
   user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   picks   Pick3Pick[]
-  wonGame Game?       @relation("GamePick3Winner")
 
   @@unique([gameId, userId])
 }

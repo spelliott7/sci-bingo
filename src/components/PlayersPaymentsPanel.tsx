@@ -58,6 +58,11 @@ export default function PlayersPaymentsPanel({ gameId }: { gameId: string }) {
 
   return (
     <div>
+      <p className="mb-3 text-xs text-white/50">
+        Nothing here processes real payments — once you&apos;ve actually received a player&apos;s
+        money (Venmo or otherwise), come back and hit <strong>Mark paid</strong> for them
+        manually.
+      </p>
       {summary && (
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
           <SummaryTile label="Players" value={summary.totalPlayers} />

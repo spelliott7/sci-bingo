@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { getPlayedSongsForGame, getShowsForGame } from "@/lib/gameQueries";
+import { getEntryLockAt, getPlayedSongsForGame, getShowsForGame } from "@/lib/gameQueries";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ gameId: string }> }) {
   const { gameId } = await params;
@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
-  const [entry, playedSongs, game, shows, payment] = await Promise.all([
+  const [entry, playedSongs, game, shows, payment, entryLockAt] = await Promise.all([
     prisma.pick3Entry.findUnique({
       where: { gameId_userId: { gameId, userId: session.sub } },
       include: { picks: { include: { song: true } } },
@@ -19,6 +19,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
     prisma.game.findUnique({ where: { id: gameId } }),
     getShowsForGame(gameId),
     prisma.payment.findUnique({ where: { gameId_userId: { gameId, userId: session.sub } } }),
+    getEntryLockAt(gameId),
   ]);
 
   return NextResponse.json({
@@ -27,5 +28,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
     game,
     shows,
     payment: payment ? { paid: payment.paid, amountDue: Number(payment.amountDue) } : null,
+    entryLockAt,
   });
 }

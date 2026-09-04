@@ -19,10 +19,11 @@ type CardResponse = {
     status: string;
     entryFee: string | number;
     venmoHandle: string | null;
-    winnerCardId: string | null;
+    winnerCardIds: string[];
   } | null;
   shows: { id: string; name: string | null; venue: string | null; showDate: string }[];
   payment: { paid: boolean; amountDue: number } | null;
+  entryLockAt: string | null;
 };
 
 const EMPTY_POSITIONS = Array.from({ length: 25 }, (_, i) => i).filter((p) => p !== FREE_POSITION);
@@ -38,6 +39,7 @@ export default function PlayCardClient({
   const [data, setData] = useState<CardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Builder state
   const [playerName, setPlayerName] = useState(defaultPlayerName);
@@ -116,6 +118,21 @@ export default function PlayCardClient({
     );
   }, [data, viewSquares]);
 
+  const entryLockAt = data?.entryLockAt ? new Date(data.entryLockAt) : null;
+  const isLocked = entryLockAt !== null && entryLockAt <= new Date();
+
+  function startEditing() {
+    if (!data?.card) return;
+    setPlayerName(data.card.playerName);
+    setBuilderSquares(
+      data.card.squares
+        .filter((s) => s.position !== FREE_POSITION)
+        .map((s) => ({ position: s.position, songId: s.songId })),
+    );
+    setError(null);
+    setIsEditing(true);
+  }
+
   async function handleSubmit() {
     setError(null);
     const incomplete = builderSquares.some((s) => s.songId === null);
@@ -131,7 +148,7 @@ export default function PlayCardClient({
     setSubmitting(true);
     try {
       const res = await fetch(`/api/games/${gameId}/cards`, {
-        method: "POST",
+        method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           playerName: playerName.trim(),
@@ -143,6 +160,7 @@ export default function PlayCardClient({
         setError(json.error ?? "Couldn't save your card.");
         return;
       }
+      setIsEditing(false);
       await loadCard();
     } finally {
       setSubmitting(false);
@@ -166,14 +184,21 @@ export default function PlayCardClient({
     );
   }
 
-  if (data.card) {
+  if (data.card && !isEditing) {
     const hasBingo = completedLines.length > 0;
-    const isDeclaredWinner = data.game.winnerCardId === data.card.id;
+    const isDeclaredWinner = data.game.winnerCardIds.includes(data.card.id);
     return (
       <div>
         {isDeclaredWinner && (
           <div className="mb-4 rounded-xl border border-cheese-gold bg-cheese-gold/20 p-4 text-center">
-            <p className="font-display text-2xl text-cheese-gold">You won! 🎉</p>
+            <p className="font-display text-2xl text-cheese-gold">
+              {data.game.winnerCardIds.length > 1 ? "You tied for the win! 🎉" : "You won! 🎉"}
+            </p>
+            {data.game.winnerCardIds.length > 1 && (
+              <p className="text-sm text-white/70">
+                More than one card hit bingo at the same moment — the pot gets split.
+              </p>
+            )}
           </div>
         )}
         {!isDeclaredWinner && hasBingo && (
@@ -195,10 +220,27 @@ export default function PlayCardClient({
             " — card updates automatically as songs get marked played across every show in this game."}
         </p>
         {data.shows.length > 0 && (
-          <p className="mb-4 text-xs text-white/40">
+          <p className="mb-2 text-xs text-white/40">
             Shows: {data.shows.map((s) => new Date(s.showDate).toLocaleDateString()).join(", ")}
           </p>
         )}
+        {data.game.status === "ACTIVE" &&
+          (isLocked ? (
+            <p className="mb-4 text-xs text-cheese-pink">
+              Entries are locked — the show has started, so this card can no longer be edited.
+            </p>
+          ) : (
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg bg-white/5 px-3 py-2">
+              <p className="text-xs text-white/50">
+                {entryLockAt
+                  ? `You can edit this card until ${entryLockAt.toLocaleString()}.`
+                  : "You can edit this card until the admin adds a show and it starts."}
+              </p>
+              <button className="btn-secondary shrink-0 text-xs" onClick={startEditing}>
+                Edit my card
+              </button>
+            </div>
+          ))}
         <BingoGrid mode="view" squares={viewSquares} markedPositions={markedPositions} winningPositions={winningPositions} />
 
         {data.game.venmoHandle && data.payment && (
@@ -220,6 +262,14 @@ export default function PlayCardClient({
 
   if (!songs) {
     return <p className="text-white/70">Loading songs…</p>;
+  }
+
+  if (isLocked && !data.card) {
+    return (
+      <p className="text-white/70">
+        Entries closed once the show started — no new cards can be created for this game anymore.
+      </p>
+    );
   }
 
   return (
@@ -262,6 +312,12 @@ export default function PlayCardClient({
           </button>
         </div>
       </div>
+      {entryLockAt && (
+        <p className="mb-3 text-xs text-white/40">
+          {isEditing ? "Edit" : "Entries"} close at {entryLockAt.toLocaleString()}, when the show
+          starts.
+        </p>
+      )}
       <BingoGrid
         mode="build"
         layout={builderLayout}
@@ -274,11 +330,28 @@ export default function PlayCardClient({
         }
       />
       {error && <p className="mt-3 text-sm text-cheese-pink">{error}</p>}
-      <button onClick={handleSubmit} disabled={submitting} className="btn-primary mt-4">
-        {submitting
-          ? "Saving…"
-          : `Save my card ($${Number(data.game.entryFee).toFixed(2)} to play)`}
-      </button>
+      <div className="mt-4 flex gap-2">
+        <button onClick={handleSubmit} disabled={submitting} className="btn-primary">
+          {submitting
+            ? "Saving…"
+            : isEditing
+              ? "Save changes"
+              : `Save my card ($${Number(data.game.entryFee).toFixed(2)} to play)`}
+        </button>
+        {isEditing && (
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={submitting}
+            onClick={() => {
+              setIsEditing(false);
+              setError(null);
+            }}
+          >
+            Cancel
+          </button>
+        )}
+      </div>
     </div>
   );
 }
