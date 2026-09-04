@@ -34,26 +34,27 @@ export default function SongTypeahead({
   const [query, setQuery] = useState(selected?.name ?? "");
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
-  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; left: number; width: number } | null>(
-    null,
-  );
+  const [dropdownStyle, setDropdownStyle] = useState<{ left: number; width: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const inputWrapperRef = useRef<HTMLDivElement>(null);
 
   // The song picker often lives in a narrow grid cell (as little as ~70px on
   // a phone), which would otherwise force the dropdown list to that same
-  // unusable width. Break it out to a fixed, comfortable width positioned
-  // under the input, clamped so it never runs off either edge of the
-  // viewport regardless of which column the cell sits in.
+  // unusable width. Break it out to a comfortable width, clamped so it
+  // never runs off either edge of the viewport. This only touches the
+  // horizontal position/width, computed relative to `containerRef` (its own
+  // positioned ancestor) — vertical placement stays plain `top-full` CSS, so
+  // it moves naturally with the page instead of needing to track scroll or
+  // the viewport resize a mobile on-screen keyboard causes.
   function openDropdown() {
-    const rect = inputWrapperRef.current?.getBoundingClientRect();
+    const rect = containerRef.current?.getBoundingClientRect();
     if (rect) {
-      const width = Math.min(DROPDOWN_WIDTH, window.innerWidth - VIEWPORT_MARGIN * 2);
-      const left = Math.min(
+      const maxWidth = window.innerWidth - VIEWPORT_MARGIN * 2;
+      const width = Math.max(rect.width, Math.min(DROPDOWN_WIDTH, maxWidth));
+      const viewportLeft = Math.min(
         Math.max(rect.left, VIEWPORT_MARGIN),
         window.innerWidth - width - VIEWPORT_MARGIN,
       );
-      setDropdownStyle({ top: rect.bottom + 4, left, width });
+      setDropdownStyle({ left: viewportLeft - rect.left, width });
     }
     setOpen(true);
   }
@@ -76,22 +77,6 @@ export default function SongTypeahead({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [selected]);
-
-  // The dropdown is fixed-positioned (so it can break out of a narrow grid
-  // cell), which means it won't track the page scrolling under it — close it
-  // instead of leaving it floating in the wrong place.
-  useEffect(() => {
-    if (!open) return;
-    function handleScroll() {
-      setOpen(false);
-    }
-    window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleScroll);
-    };
-  }, [open]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -132,7 +117,7 @@ export default function SongTypeahead({
 
   return (
     <div ref={containerRef} className="relative">
-      <div ref={inputWrapperRef} className="relative">
+      <div className="relative">
         <input
           className="field pr-8 text-sm"
           value={query}
@@ -165,8 +150,8 @@ export default function SongTypeahead({
         <ul
           id={listboxId}
           role="listbox"
-          style={{ top: dropdownStyle.top, left: dropdownStyle.left, width: dropdownStyle.width }}
-          className="fixed z-20 max-h-56 overflow-auto rounded-lg border border-white/20 bg-cheese-purple shadow-xl"
+          style={{ left: dropdownStyle.left, width: dropdownStyle.width }}
+          className="absolute top-full z-20 mt-1 max-h-56 overflow-auto rounded-lg border border-white/20 bg-cheese-purple shadow-xl"
         >
           {results.length === 0 && (
             <li className="px-3 py-2 text-sm text-white/50">No songs match.</li>
