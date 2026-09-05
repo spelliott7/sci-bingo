@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 type User = {
   id: string;
   username: string;
+  name: string | null;
   email: string;
   role: "PLAYER" | "ADMIN";
   createdAt: string;
@@ -61,6 +62,7 @@ export default function UsersTable({ currentUserId }: { currentUserId: string })
         <table className="w-full text-left text-sm">
           <thead className="text-white/50">
             <tr>
+              <th className="py-1 pr-2 font-normal">Name</th>
               <th className="py-1 pr-2 font-normal">Username</th>
               <th className="py-1 pr-2 font-normal">Email</th>
               <th className="py-1 pr-2 font-normal">Joined</th>
@@ -70,7 +72,8 @@ export default function UsersTable({ currentUserId }: { currentUserId: string })
           <tbody>
             {users.map((u) => (
               <tr key={u.id} className="border-t border-white/10">
-                <td className="py-2 pr-2 font-semibold">
+                <td className="py-2 pr-2 font-semibold">{u.name ?? <span className="font-normal text-white/40">—</span>}</td>
+                <td className="py-2 pr-2">
                   @{u.username}
                   {u.id === currentUserId && <span className="ml-2 text-xs text-cheese-gold">(you)</span>}
                 </td>
@@ -93,7 +96,7 @@ export default function UsersTable({ currentUserId }: { currentUserId: string })
             ))}
             {users.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-3 text-white/50">
+                <td colSpan={5} className="py-3 text-white/50">
                   No one has registered yet.
                 </td>
               </tr>

@@ -11,6 +11,11 @@ const schema = z.object({
     .min(3, "Username needs to be at least 3 characters.")
     .max(24, "Username needs to be 24 characters or fewer.")
     .regex(/^[a-zA-Z0-9_]+$/, "Letters, numbers, and underscores only."),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Enter your name (first name, last initial).")
+    .max(40, "Keep it to 40 characters or fewer."),
   email: z.string().trim().email("Enter a valid email address."),
   password: z.string().min(8, "Password needs to be at least 8 characters."),
 });
@@ -25,7 +30,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { username, password } = parsed.data;
+  const { username, name, password } = parsed.data;
   const email = parsed.data.email.toLowerCase();
 
   const existing = await prisma.user.findFirst({
@@ -38,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   const passwordHash = await hashPassword(password);
   const user = await prisma.user.create({
-    data: { username, email, passwordHash },
+    data: { username, name, email, passwordHash },
   });
 
   const token = await signSessionToken({ sub: user.id, username: user.username, role: user.role });

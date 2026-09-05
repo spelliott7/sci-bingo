@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 type Player = {
   userId: string;
   username: string;
+  name: string | null;
   playerName: string;
   paid: boolean;
   paidAt: string | null;
@@ -79,6 +80,7 @@ export default function PlayersPaymentsPanel({ gameId }: { gameId: string }) {
             <tr>
               <th className="py-1 pr-2 font-normal">Player</th>
               <th className="py-1 pr-2 font-normal">Username</th>
+              <th className="py-1 pr-2 font-normal">Name</th>
               <th className="py-1 pr-2 font-normal">Amount</th>
               <th className="py-1 pr-2 font-normal">Paid</th>
             </tr>
@@ -88,6 +90,7 @@ export default function PlayersPaymentsPanel({ gameId }: { gameId: string }) {
               <tr key={p.userId} className="border-t border-white/10">
                 <td className="py-2 pr-2 font-semibold">{p.playerName}</td>
                 <td className="py-2 pr-2 text-white/60">@{p.username}</td>
+                <td className="py-2 pr-2 text-white/60">{p.name ?? "—"}</td>
                 <td className="py-2 pr-2">${p.amountDue.toFixed(2)}</td>
                 <td className="py-2 pr-2">
                   <button
@@ -104,7 +107,7 @@ export default function PlayersPaymentsPanel({ gameId }: { gameId: string }) {
             ))}
             {players.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-3 text-white/50">
+                <td colSpan={5} className="py-3 text-white/50">
                   No one has entered yet.
                 </td>
               </tr>

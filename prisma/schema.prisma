@@ -29,6 +29,10 @@ model User {
   username     String   @unique
   email        String   @unique
   passwordHash String
+  /// First name + last initial (e.g. "Jane D"), collected at registration.
+  /// Only ever shown to admins (user list, payment listing) so they can tell
+  /// who a username/payout actually belongs to — never shown to other players.
+  name         String?
   role         Role     @default(PLAYER)
   createdAt    DateTime @default(now())
 

@@ -8,6 +8,7 @@ import PosterBackground from "@/components/PosterBackground";
 export default function RegisterPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +22,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, name, email, password }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -42,7 +43,8 @@ export default function RegisterPage() {
         <div className="panel w-full max-w-md">
           <h1 className="title-gradient font-display text-2xl">Create your account</h1>
           <p className="mt-1 text-sm text-white/70">
-            Just a username, email, and password — this is how we track your cards and history.
+            Just a username, your name, email, and password — this is how we track your cards and
+            history.
           </p>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
@@ -57,6 +59,25 @@ export default function RegisterPage() {
                 autoComplete="username"
                 required
               />
+            </div>
+            <div>
+              <label className="label" htmlFor="name">
+                Your name
+              </label>
+              <input
+                id="name"
+                className="field"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="First name, last initial — e.g. Jane D"
+                autoComplete="name"
+                maxLength={40}
+                required
+              />
+              <p className="mt-1 text-xs text-white/40">
+                Only admins see this (for figuring out who&apos;s who on payouts) — other players
+                never see it.
+              </p>
             </div>
             <div>
               <label className="label" htmlFor="email">

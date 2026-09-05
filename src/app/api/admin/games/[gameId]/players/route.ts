@@ -20,6 +20,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
   let players: {
     userId: string;
     username: string;
+    name: string | null;
     email: string;
     playerName: string;
     entryId: string;
@@ -32,7 +33,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
   if (game.type === "BINGO") {
     const cards = await prisma.bingoCard.findMany({
       where: { gameId },
-      include: { user: { select: { id: true, username: true, email: true } }, squares: true },
+      include: {
+        user: { select: { id: true, username: true, name: true, email: true } },
+        squares: true,
+      },
       orderBy: { createdAt: "asc" },
     });
     players = cards.map((card) => {
@@ -41,6 +45,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
       return {
         userId: card.userId,
         username: card.user.username,
+        name: card.user.name,
         email: card.user.email,
         playerName: card.playerName,
         entryId: card.id,
@@ -53,7 +58,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
   } else {
     const entries = await prisma.pick3Entry.findMany({
       where: { gameId },
-      include: { user: { select: { id: true, username: true, email: true } }, picks: true },
+      include: {
+        user: { select: { id: true, username: true, name: true, email: true } },
+        picks: true,
+      },
       orderBy: { createdAt: "asc" },
     });
     players = entries.map((entry) => {
@@ -62,6 +70,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
       return {
         userId: entry.userId,
         username: entry.user.username,
+        name: entry.user.name,
         email: entry.user.email,
         playerName: entry.playerName,
         entryId: entry.id,
