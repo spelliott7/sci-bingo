@@ -1,4 +1,11 @@
 import { prisma } from "@/lib/db";
+import { FREE_SPACE_SONG_NAME } from "@/lib/bingo";
+
+/** The song id the Bingo free square represents — never pickable in any other square. */
+export async function getFreeSpaceSongId(): Promise<number | null> {
+  const song = await prisma.song.findFirst({ where: { name: FREE_SPACE_SONG_NAME } });
+  return song?.id ?? null;
+}
 
 /** All songs played at any show this game includes, across the whole game. */
 export async function getPlayedSongsForGame(gameId: string) {

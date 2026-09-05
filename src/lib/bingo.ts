@@ -7,6 +7,9 @@ export const GRID_SIZE = 5;
 export const FREE_POSITION = 12;
 export const CARD_SIZE = GRID_SIZE * GRID_SIZE;
 
+/** The free square always represents this song — it can't be picked anywhere else on the card. */
+export const FREE_SPACE_SONG_NAME = "Drums";
+
 export const WIN_LINES: number[][] = [
   // rows
   [0, 1, 2, 3, 4],

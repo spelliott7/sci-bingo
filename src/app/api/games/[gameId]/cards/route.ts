@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { CARD_SIZE, FREE_POSITION } from "@/lib/bingo";
-import { getEntryLockAt } from "@/lib/gameQueries";
+import { CARD_SIZE, FREE_POSITION, FREE_SPACE_SONG_NAME } from "@/lib/bingo";
+import { getEntryLockAt, getFreeSpaceSongId } from "@/lib/gameQueries";
 
 const schema = z.object({
   playerName: z.string().trim().min(1, "Enter a name for this card.").max(60),
@@ -12,7 +12,10 @@ const schema = z.object({
     .length(CARD_SIZE - 1, "A card needs a song in every square (the center is free)."),
 });
 
-function validateSquares(squares: { position: number; songId: number }[]) {
+function validateSquares(
+  squares: { position: number; songId: number }[],
+  freeSpaceSongId: number | null,
+) {
   const positions = new Set(squares.map((s) => s.position));
   if (positions.has(FREE_POSITION) || positions.size !== squares.length) {
     return "Invalid square positions.";
@@ -26,6 +29,9 @@ function validateSquares(squares: { position: number; songId: number }[]) {
   const songIds = squares.map((s) => s.songId);
   if (new Set(songIds).size !== songIds.length) {
     return "Each song can only be used once per card.";
+  }
+  if (freeSpaceSongId !== null && songIds.includes(freeSpaceSongId)) {
+    return `${FREE_SPACE_SONG_NAME} is locked to the free space — it can't be picked elsewhere.`;
   }
   return null;
 }
@@ -50,7 +56,8 @@ export async function POST(
   }
 
   const { playerName, squares } = parsed.data;
-  const squareError = validateSquares(squares);
+  const freeSpaceSongId = await getFreeSpaceSongId();
+  const squareError = validateSquares(squares, freeSpaceSongId);
   if (squareError) {
     return NextResponse.json({ error: squareError }, { status: 400 });
   }
@@ -134,7 +141,8 @@ export async function PATCH(
   }
 
   const { playerName, squares } = parsed.data;
-  const squareError = validateSquares(squares);
+  const freeSpaceSongId = await getFreeSpaceSongId();
+  const squareError = validateSquares(squares, freeSpaceSongId);
   if (squareError) {
     return NextResponse.json({ error: squareError }, { status: 400 });
   }

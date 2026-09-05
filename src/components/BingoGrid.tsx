@@ -1,6 +1,6 @@
 "use client";
 
-import { FREE_POSITION } from "@/lib/bingo";
+import { FREE_POSITION, FREE_SPACE_SONG_NAME } from "@/lib/bingo";
 import SongTypeahead, { type SongOption } from "@/components/SongTypeahead";
 
 export type GridSquare = {
@@ -29,6 +29,11 @@ type Props = BuildProps | ViewProps;
 export default function BingoGrid(props: Props) {
   const byPosition = new Map(props.squares.map((s) => [s.position, s]));
 
+  // The free square always stands in for this song, so it's never offered
+  // as a pick for any other square on the card.
+  const freeSpaceSongId =
+    props.mode === "build" ? props.songs.find((s) => s.name === FREE_SPACE_SONG_NAME)?.id : undefined;
+
   if (props.mode === "build" && props.layout === "list") {
     return (
       <div className="space-y-2">
@@ -38,6 +43,7 @@ export default function BingoGrid(props: Props) {
           const selectedIds = new Set(
             props.squares.filter((s) => s.songId !== null).map((s) => s.songId as number),
           );
+          if (freeSpaceSongId !== undefined) selectedIds.add(freeSpaceSongId);
           if (square?.songId) selectedIds.delete(square.songId);
 
           return (
@@ -51,7 +57,9 @@ export default function BingoGrid(props: Props) {
               {isFree ? (
                 <span className="flex items-center gap-1.5 text-cheese-gold">
                   <span className="text-lg leading-none">★</span>
-                  <span className="text-sm font-bold uppercase tracking-wide">Free space</span>
+                  <span className="text-sm font-bold uppercase tracking-wide">
+                    {FREE_SPACE_SONG_NAME} (free space)
+                  </span>
                 </span>
               ) : (
                 <div className="flex-1">
@@ -81,6 +89,7 @@ export default function BingoGrid(props: Props) {
           const selectedIds = new Set(
             props.squares.filter((s) => s.songId !== null).map((s) => s.songId as number),
           );
+          if (freeSpaceSongId !== undefined) selectedIds.add(freeSpaceSongId);
           if (square?.songId) selectedIds.delete(square.songId);
 
           return (
@@ -129,7 +138,7 @@ function FreeSquare() {
   return (
     <div className="flex flex-col items-center justify-center text-cheese-gold">
       <span className="text-lg">★</span>
-      <span className="text-[10px] font-bold uppercase tracking-wide">Free</span>
+      <span className="text-[10px] font-bold uppercase tracking-wide">{FREE_SPACE_SONG_NAME}</span>
     </div>
   );
 }
