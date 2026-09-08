@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import NavBar from "@/components/NavBar";
@@ -96,6 +97,21 @@ export default async function AdminGamePage({
           <h2 className="font-display text-lg text-cheese-teal">Shows &amp; setlists</h2>
           <div className="mt-3">
             <ShowManager gameId={game.id} />
+          </div>
+        </section>
+
+        <section className="panel mt-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-lg text-cheese-teal">Player entries</h2>
+              <p className="mt-1 text-sm text-white/60">
+                See everyone&apos;s {game.type === "BINGO" ? "card" : "picks"} side by side —
+                what&apos;s marked, who&apos;s close, who&apos;s won.
+              </p>
+            </div>
+            <Link href={`/admin/games/${game.id}/entries`} className="btn-secondary shrink-0 text-sm">
+              Review entries
+            </Link>
           </div>
         </section>
 
