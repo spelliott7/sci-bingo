@@ -79,12 +79,6 @@ export default function LoginPage() {
               Create an account
             </Link>
           </p>
-          <p className="mt-2 text-center text-xs text-white/40">
-            Running the game tonight?{" "}
-            <Link href="/admin/login" className="text-white/60 hover:underline">
-              Admin sign in
-            </Link>
-          </p>
         </div>
       </main>
     </>

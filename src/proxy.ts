@@ -8,11 +8,9 @@ const GATE_EXEMPT = new Set(["/gate", "/api/gate"]);
 const LOGIN_EXEMPT_PREFIXES = [
   "/login",
   "/register",
-  "/admin/login",
   "/api/auth/login",
   "/api/auth/register",
   "/api/auth/logout",
-  "/api/admin/login",
 ];
 
 function isExempt(pathname: string, list: string[] | Set<string>) {
@@ -50,7 +48,10 @@ export async function proxy(request: NextRequest) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ error: "Admin access required." }, { status: 401 });
       }
-      return NextResponse.redirect(new URL("/admin/login", request.url));
+      // Signed in but not an admin: re-showing the login form won't fix that,
+      // so send them to their own dashboard instead of back through /login.
+      const target = session ? "/" : "/login";
+      return NextResponse.redirect(new URL(target, request.url));
     }
     return NextResponse.next();
   }
