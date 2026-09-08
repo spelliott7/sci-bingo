@@ -71,10 +71,10 @@ export default function EntriesReviewPanel({ gameId }: { gameId: string }) {
         {results.map((r) => (
           <div
             key={r.entryId}
-            className={`w-[300px] shrink-0 rounded-xl border p-3 ${
+            className={`w-[300px] shrink-0 rounded-xl border p-3 shadow-xl ${
               r.isWinner
-                ? "border-cheese-gold bg-cheese-gold/10"
-                : "border-white/15 bg-white/5"
+                ? "border-cheese-gold bg-[#150a28]/95"
+                : "border-white/15 bg-[#150a28]/95"
             }`}
           >
             <div className="mb-2">
@@ -105,8 +105,8 @@ export default function EntriesReviewPanel({ gameId }: { gameId: string }) {
                       key={pick.songId}
                       className={`rounded-lg border px-2 py-1.5 text-center text-sm font-semibold ${
                         hit
-                          ? "border-cheese-gold bg-cheese-gold/20 text-cheese-gold"
-                          : "border-white/15 bg-white/5 text-white/80"
+                          ? "border-cheese-gold bg-cheese-gold/80 text-cheese-ink"
+                          : "border-white/15 bg-[#150a28]/90 text-white/80"
                       }`}
                     >
                       {pick.songName}

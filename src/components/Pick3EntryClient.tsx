@@ -210,8 +210,8 @@ export default function Pick3EntryClient({
                 key={pick.songId}
                 className={`rounded-xl border p-4 text-center font-semibold ${
                   hit
-                    ? "mark-pop border-cheese-gold bg-cheese-gold/20 text-cheese-gold shadow-glow"
-                    : "border-white/15 bg-white/5 text-white/80"
+                    ? "mark-pop border-cheese-gold bg-cheese-gold/80 text-cheese-ink shadow-glow"
+                    : "border-white/15 bg-[#150a28]/90 text-white/80"
                 }`}
               >
                 {pick.song.name}

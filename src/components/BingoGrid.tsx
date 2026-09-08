@@ -120,13 +120,13 @@ export default function BingoGrid(props: Props) {
             key={position}
             className={`flex min-h-[80px] items-center justify-center rounded-lg border p-1.5 text-center text-[11px] font-semibold leading-tight sm:text-xs ${
               isWinning
-                ? "mark-pop border-cheese-gold bg-cheese-gold/30 text-cheese-gold shadow-glow"
+                ? "mark-pop border-cheese-gold bg-cheese-gold/80 text-cheese-ink shadow-glow"
                 : marked
-                  ? "mark-pop border-cheese-teal bg-cheese-teal/25 text-white"
-                  : "border-white/15 bg-white/5 text-white/80"
+                  ? "mark-pop border-cheese-teal bg-cheese-teal/80 text-white"
+                  : "border-white/15 bg-[#150a28]/90 text-white/80"
             }`}
           >
-            {isFree ? <FreeSquare /> : <span>{square?.songName}</span>}
+            {isFree ? <FreeSquare dark={isWinning} /> : <span>{square?.songName}</span>}
           </div>
         );
       })}
@@ -134,9 +134,9 @@ export default function BingoGrid(props: Props) {
   );
 }
 
-function FreeSquare() {
+function FreeSquare({ dark = false }: { dark?: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center text-cheese-gold">
+    <div className={`flex flex-col items-center justify-center ${dark ? "text-cheese-ink" : "text-cheese-gold"}`}>
       <span className="text-lg">★</span>
       <span className="text-[10px] font-bold uppercase tracking-wide">{FREE_SPACE_SONG_NAME}</span>
     </div>

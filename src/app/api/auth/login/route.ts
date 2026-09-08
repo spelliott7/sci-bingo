@@ -21,7 +21,12 @@ export async function POST(request: NextRequest) {
 
   const { identifier, password } = parsed.data;
   const user = await prisma.user.findFirst({
-    where: { OR: [{ username: identifier }, { email: identifier.toLowerCase() }] },
+    where: {
+      OR: [
+        { username: { equals: identifier, mode: "insensitive" } },
+        { email: identifier.toLowerCase() },
+      ],
+    },
   });
 
   if (!user || !(await verifyPassword(password, user.passwordHash))) {

@@ -99,8 +99,8 @@ export default async function HistoryDetailPage({
                     key={pick.songId}
                     className={`rounded-xl border p-4 text-center font-semibold ${
                       hit
-                        ? "border-cheese-gold bg-cheese-gold/20 text-cheese-gold"
-                        : "border-white/15 bg-white/5 text-white/80"
+                        ? "border-cheese-gold bg-cheese-gold/80 text-cheese-ink"
+                        : "border-white/15 bg-[#150a28]/90 text-white/80"
                     }`}
                   >
                     {pick.songName}

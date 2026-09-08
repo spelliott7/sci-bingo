@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { SESSION_COOKIE, signSessionToken } from "@/lib/session";
@@ -34,17 +35,30 @@ export async function POST(request: NextRequest) {
   const email = parsed.data.email.toLowerCase();
 
   const existing = await prisma.user.findFirst({
-    where: { OR: [{ username }, { email }] },
+    where: {
+      OR: [{ username: { equals: username, mode: "insensitive" } }, { email }],
+    },
   });
   if (existing) {
-    const field = existing.username === username ? "username" : "email";
+    const field = existing.email === email ? "email" : "username";
     return NextResponse.json({ error: `That ${field} is already taken.` }, { status: 409 });
   }
 
   const passwordHash = await hashPassword(password);
-  const user = await prisma.user.create({
-    data: { username, name, email, passwordHash },
-  });
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: { username, name, email, passwordHash },
+    });
+  } catch (err) {
+    // Race: two people registering the same username (any case) at once —
+    // the DB's case-insensitive unique index catches what the check above
+    // might not.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return NextResponse.json({ error: "That username is already taken." }, { status: 409 });
+    }
+    throw err;
+  }
 
   const token = await signSessionToken({ sub: user.id, username: user.username, role: user.role });
   const response = NextResponse.json({ ok: true });
