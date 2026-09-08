@@ -41,6 +41,11 @@ export default function ShowManager({ gameId }: { gameId: string }) {
     loadShows();
   }, [loadShows]);
 
+  const selectedShow = useMemo(
+    () => shows?.find((s) => s.id === selectedShowId) ?? null,
+    [shows, selectedShowId],
+  );
+
   if (!shows) {
     return <p className="text-white/50">Loading shows…</p>;
   }
@@ -88,11 +93,100 @@ export default function ShowManager({ gameId }: { gameId: string }) {
         </p>
       )}
 
-      {selectedShowId && (
+      {selectedShow && (
         <div className="mt-4 border-t border-white/10 pt-4">
-          <PlayedSongsPanel showId={selectedShowId} />
+          <ShowTimeEditor show={selectedShow} onSaved={loadShows} />
+          <div className="mt-4">
+            <PlayedSongsPanel showId={selectedShow.id} />
+          </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Local YYYY-MM-DDTHH:mm for a datetime-local input, in the browser's own timezone. */
+function toDatetimeLocalValue(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function ShowTimeEditor({ show, onSaved }: { show: Show; onSaved: () => Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(() => toDatetimeLocalValue(show.showDate));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/shows/${show.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ showDate: value }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? "Couldn't save that time.");
+        return;
+      }
+      setEditing(false);
+      await onSaved();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <p className="text-white/70">
+          {show.name ? `${show.name} — ` : ""}
+          {show.venue ? `${show.venue}, ` : ""}
+          {new Date(show.showDate).toLocaleString()}
+        </p>
+        <button
+          onClick={() => {
+            setValue(toDatetimeLocalValue(show.showDate));
+            setEditing(true);
+          }}
+          className="text-cheese-gold hover:underline"
+        >
+          Change start time
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <div>
+        <label className="label">New start time</label>
+        <input
+          type="datetime-local"
+          className="field"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          autoFocus
+        />
+      </div>
+      <button onClick={save} disabled={saving} className="btn-primary text-sm">
+        {saving ? "Saving…" : "Save"}
+      </button>
+      <button
+        onClick={() => setEditing(false)}
+        disabled={saving}
+        className="btn-secondary text-sm"
+      >
+        Cancel
+      </button>
+      {error && <span className="text-xs text-cheese-pink">{error}</span>}
+      <p className="w-full text-xs text-white/40">
+        If this is the earliest show in the game, pushing it back also pushes back when entries
+        lock — good for a rain delay or a late start.
+      </p>
     </div>
   );
 }
