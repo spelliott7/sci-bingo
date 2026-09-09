@@ -1,11 +1,10 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import PosterBackground from "@/components/PosterBackground";
 
 function GateForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/";
 
@@ -29,8 +28,12 @@ function GateForm() {
         setError(data.error ?? "Something went wrong.");
         return;
       }
-      router.push(next);
-      router.refresh();
+      // A full page navigation (not the SPA router) so the freshly-set gate
+      // cookie is guaranteed to be there for the next request — chaining
+      // router.push+refresh across the gate -> login handoff was a real
+      // source of dropped navigations when the two happened in quick
+      // succession.
+      window.location.href = next;
     } finally {
       setLoading(false);
     }

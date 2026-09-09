@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import PosterBackground from "@/components/PosterBackground";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -29,8 +27,10 @@ export default function RegisterPage() {
         setError(data.error ?? "Something went wrong.");
         return;
       }
-      router.push("/");
-      router.refresh();
+      // Full page navigation, not the SPA router — see the comment in
+      // gate/page.tsx for why.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = "/";
     } finally {
       setLoading(false);
     }
